@@ -1,0 +1,385 @@
+<html>
+	<head>
+		<script
+			defer
+			src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+		></script>
+
+		<style>
+			.app {
+				margin: 0 auto;
+				width: 100%;
+				max-width: 500px;
+			}
+
+			.board_container {
+				display: grid;
+				grid-template-areas:
+					'. colhints'
+					'rowhints grid';
+				grid-template-columns: 1fr 3fr;
+			}
+
+			.grid {
+				grid-area: grid;
+
+				aspect-ratio: 1 / 1;
+
+				display: flex;
+				flex-direction: column;
+			}
+
+			.row {
+				display: flex;
+				flex-grow: 1;
+			}
+
+			.cell {
+				display: block;
+				border: 1px solid black;
+				flex-grow: 1;
+
+				position: relative;
+			}
+
+			.cellIsBlack {
+				background-color: black;
+			}
+
+			.cellIsWhite {
+				background-color: #eee;
+			}
+
+			.cellIsWhite::after {
+				content: '✖︎';
+				text-align: center;
+
+				width: 20px;
+				height: 20px;
+
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+			}
+
+			.tools {
+				text-align: center;
+				padding: 10px 0px;
+			}
+
+			.tool {
+				display: inline-block;
+				border: 1px solid #333;
+				border-radius: 5px;
+
+				padding: 10px 20px;
+
+				cursor: pointer;
+			}
+
+			.selectedTool {
+				background-color: #ccc;
+				border: 3px solid black;
+				box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+			}
+
+			.colHints {
+				display: inline-block;
+				text-align: center;
+
+				flex-grow: 1;
+				display: flex;
+				flex-direction: column;
+				justify-content: flex-end;
+			}
+
+			.rowHintsContainer {
+				grid-area: rowhints;
+
+				display: flex;
+				flex-direction: column;
+			}
+
+			.colHintsContainer {
+				grid-area: colhints;
+
+				display: flex;
+			}
+
+			.rowHints {
+				text-align: right;
+
+				flex-grow: 1;
+				display: flex;
+				justify-content: flex-end;
+			}
+
+			.rowHint {
+				padding: 0px 10px;
+
+				display: flex;
+				align-items: center;
+			}
+
+			.colHint {
+				padding: 10px 0px;
+				text-align: center;
+			}
+
+			.grid {
+				/* display: inline-block; */
+			}
+
+			.setLevel {
+				text-align: center;
+			}
+
+			.level {
+				padding: 10px 20px;
+				background: #eee;
+				cursor: pointer;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="app" x-data="nonogram">
+			<span
+				>Anzahl Leben:
+				<template x-for="i in 3">
+					<span x-text="i <= lives ? '❤️' : '🤍'"></span>
+				</template>
+			</span>
+
+			<div class="board_container">
+				<div class="colHintsContainer">
+					<template x-for="hint in hints.cols">
+						<div class="colHints">
+							<template x-for="h in hint">
+								<div class="colHint" x-text="h.num"></div>
+							</template>
+						</div>
+					</template>
+				</div>
+
+				<div class="rowHintsContainer">
+					<template x-for="hint in hints.rows">
+						<div class="rowHints">
+							<template x-for="h in hint">
+								<div class="rowHint" x-text="h.num"></div>
+							</template>
+						</div>
+					</template>
+				</div>
+
+				<div class="grid">
+					<template x-for="(row, ridx) in board">
+						<div class="row">
+							<template x-for="(cell, cidx) in row">
+								<div
+									@click="selectCell(ridx, cidx)"
+									class="cell"
+									:class="whatIsSelected(cell)"
+								></div>
+							</template>
+						</div>
+					</template>
+				</div>
+			</div>
+
+			<div class="tools">
+				<span
+					class="tool"
+					:class="tool == 'black' ? 'selectedTool' : ''"
+					@click="tool = 'black'"
+					>⬛︎</span
+				>
+				<span
+					class="tool"
+					:class="tool == 'white' ? 'selectedTool' : ''"
+					@click="tool = 'white'"
+					>◻️</span
+				>
+			</div>
+
+			<template x-if="lives == 0">
+				<div>
+					Leider verloren. Probiere es nochmal mit einem neuen Spiel!
+				</div>
+			</template>
+
+			<template x-if="solved">
+				<div>Yay, gewonnen!!!</div>
+			</template>
+
+			<div class="setLevel">
+				<span class="level" @click="n = 5">Leicht</span>
+				<span class="level" @click="n = 10">Mittel</span>
+				<span class="level" @click="n = 15">Schwer</span>
+			</div>
+		</div>
+
+		<script>
+			function generateBoard(n, probability) {
+				const board = [];
+				// Generate rows
+				for (let i = 0; i < n; i++) {
+					const row = [];
+					// Generate cells
+					for (let j = 0; j < n; j++) {
+						// Generate a random number between 0 and 1
+						const random = Math.random();
+
+						// Assign a boolean value based on the probability
+						const value = random < probability ? 'black' : 'white';
+
+						row.push({
+							solution: value,
+							selected: false,
+						});
+					}
+					board.push(row);
+				}
+				return board;
+			}
+
+			function data() {
+				return {
+					n: 5,
+					prob: 0.5,
+					board: [],
+					get hints() {
+						// Column Hints
+						const colHints = [];
+						for (let col = 0; col < this.board.length; col++) {
+							const cHints = [];
+							let counter = 0;
+							for (let row = 0; row < this.board.length; row++) {
+								const cell = this.board[row][col];
+
+								if (cell.solution == 'black') {
+									counter += 1;
+								} else if (
+									cell.solution == 'white' &&
+									counter != 0
+								) {
+									cHints.push({
+										num: counter,
+										solved: false,
+									});
+									counter = 0;
+								}
+							}
+							if (counter != 0) {
+								cHints.push({
+									num: counter,
+									solved: false,
+								});
+							}
+
+							colHints.push(cHints);
+						}
+
+						// Row Hints
+						const rowHints = [];
+						for (let row = 0; row < this.board.length; row++) {
+							const rHints = [];
+							let counter = 0;
+							for (let col = 0; col < this.board.length; col++) {
+								const cell = this.board[row][col];
+
+								if (cell.solution == 'black') {
+									counter += 1;
+								} else if (
+									cell.solution == 'white' &&
+									counter != 0
+								) {
+									rHints.push({
+										num: counter,
+										solved: false,
+									});
+									counter = 0;
+								}
+							}
+							if (counter != 0) {
+								rHints.push({
+									num: counter,
+									solved: false,
+								});
+							}
+
+							rowHints.push(rHints);
+						}
+
+						console.log(rowHints);
+
+						return {
+							rows: rowHints,
+							cols: colHints,
+						};
+					},
+					get solved() {
+						for (let row = 0; row < this.board.length; row++) {
+							for (let col = 0; col < this.board.length; col++) {
+								const cell = this.board[row][col];
+								// if only white cells remain, everything is fine
+								if (
+									!cell.selected &&
+									cell.solution == 'black'
+								) {
+									return false;
+								}
+							}
+						}
+						return true;
+					},
+					lives: 3,
+
+					tool: 'black',
+
+					init() {
+						this.board = generateBoard(this.n, this.prob);
+
+						this.$watch('n', (value) => {
+							this.board = generateBoard(this.n, this.prob);
+						});
+					},
+
+					selectCell(cidx, ridx) {
+						const cell = this.board[cidx][ridx];
+
+						if (cell.selected) {
+							// the cell is already selected and thus, nothing should happen
+							return;
+						}
+
+						cell.selected = true;
+						this.board[cidx][ridx] = cell;
+
+						if (cell.solution != this.tool) {
+							this.lives -= 1;
+							// TODO: Mehr Feedback geben
+							console.log('Leider falsch!');
+						}
+					},
+					whatIsSelected(cell) {
+						if (cell.selected) {
+							if (cell.solution == 'black') {
+								return 'cellIsBlack';
+							} else if (cell.solution == 'white') {
+								return 'cellIsWhite';
+							}
+						} else {
+							// Cell is not clicked
+							return '';
+						}
+					},
+				};
+			}
+
+			document.addEventListener('alpine:init', () => {
+				Alpine.data('nonogram', data);
+			});
+		</script>
+	</body>
+</html>
