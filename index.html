@@ -4,12 +4,48 @@
 			defer
 			src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
 		></script>
+		<script src="js/confetti.js"></script>
+
+		<title>Omagramm</title>
+
+		<!-- Fonts -->
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;600&display=swap"
+			rel="stylesheet"
+		/>
 
 		<style>
+			:root {
+				--red: #b80a0a;
+			}
+
+			* {
+				box-sizing: border-box;
+				font-family: 'Poppins', sans-serif;
+			}
+
+			html {
+				background-image: url(images/background.png);
+				background-repeat: repeat;
+			}
+
 			.app {
 				margin: 0 auto;
 				width: 100%;
 				max-width: 500px;
+			}
+
+			.title {
+				text-align: center;
+				margin: 0;
+				font-size: 3rem;
+			}
+
+			header {
+				display: flex;
+				margin-bottom: 1rem;
 			}
 
 			.board_container {
@@ -17,7 +53,7 @@
 				grid-template-areas:
 					'. colhints'
 					'rowhints grid';
-				grid-template-columns: 1fr 3fr;
+				grid-template-columns: auto 1fr;
 			}
 
 			.grid {
@@ -43,52 +79,49 @@
 			}
 
 			.cellIsBlack {
-				background-color: black;
+				background-color: #333;
+				background-image: url(images/black.png);
+				background-repeat: no-repeat;
+				background-size: contain;
 			}
 
 			.cellIsWhite {
-				background-color: #eee;
-			}
-
-			.cellIsWhite::after {
-				content: '✖︎';
-				text-align: center;
-
-				width: 20px;
-				height: 20px;
-
-				position: absolute;
-				top: 50%;
-				left: 50%;
-				transform: translate(-50%, -50%);
+				background-color: #afafaf;
+				background-image: url(images/white.png);
+				background-repeat: no-repeat;
+				background-size: contain;
 			}
 
 			.tools {
 				text-align: center;
-				padding: 10px 0px;
+			}
+
+			.toolContainer {
+				display: inline-block;
 			}
 
 			.tool {
 				display: inline-block;
-				border: 1px solid #333;
-				border-radius: 5px;
+				width: 5rem;
+				height: 5rem;
 
-				padding: 10px 20px;
+				border: 5px solid #ffffff00;
+				margin: 0 0.2rem;
+				border-radius: 0.2rem;
 
 				cursor: pointer;
 			}
 
 			.selectedTool {
-				background-color: #ccc;
-				border: 3px solid black;
-				box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+				border: 5px solid var(--red);
+				box-shadow: 0 0 0.7rem rgba(0, 0, 0, 0.2);
 			}
 
 			.colHints {
 				display: inline-block;
 				text-align: center;
 
-				flex-grow: 1;
+				flex: 1 1 0;
 				display: flex;
 				flex-direction: column;
 				justify-content: flex-end;
@@ -110,46 +143,168 @@
 			.rowHints {
 				text-align: right;
 
-				flex-grow: 1;
+				flex: 1 1 0;
 				display: flex;
 				justify-content: flex-end;
 			}
 
 			.rowHint {
-				padding: 0px 10px;
+				padding: 0px 0.5rem;
+
+				background-color: #333;
+				color: white;
+				margin: 0.1rem 0.2rem 0.1rem 0;
+				border-radius: 0.2rem;
 
 				display: flex;
 				align-items: center;
 			}
 
 			.colHint {
-				padding: 10px 0px;
+				padding: 0.5rem 0px;
 				text-align: center;
+
+				background-color: #333;
+				color: white;
+				margin: 0 0.1rem 0.2rem 0.1rem;
+				border-radius: 0.2rem;
 			}
 
 			.grid {
-				/* display: inline-block; */
+				border: 1px solid black;
 			}
 
-			.setLevel {
+			.levels {
 				text-align: center;
+				display: block;
 			}
 
 			.level {
-				padding: 10px 20px;
+				display: inline-block;
+				padding: 1rem 0.5rem;
+				background: #eeeeeeaa;
+				cursor: pointer;
+				border: 0.5rem solid #ffffff20;
+			}
+
+			.selectedLevel {
+				border: 0.5rem solid var(--red);
+				color: var(--red);
+			}
+
+			.lives {
+				display: block;
+				text-align: center;
+				flex: 1;
+			}
+
+			.livesNumber {
+				display: block;
+				font-size: 3rem;
+				color: var(--red);
+			}
+
+			.newGameButton {
+				display: block;
+				text-align: center;
+				font-size: 3rem;
+				cursor: pointer;
+			}
+
+			.dialog {
+				text-align: center;
+
+				background: white;
+				padding: 1rem 2rem;
+
+				border-radius: 0.3rem;
+				box-shadow: 0 0 5rem #000;
+			}
+
+			.dialogBackground {
+				position: fixed;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+
+				top: 0;
+				left: 0;
+				right: 0;
+				bottom: 0;
+				background: #000000aa;
+			}
+
+			.dialogBackgroundWin {
+				background: linear-gradient(-45deg, #f0e54caa, #68c233aa, #2ec25baa, #238bd5aa);
+				background-size: 400% 400%;
+				animation: gradient 2s ease infinite;
+				height: 100vh;
+			}
+			
+			.newGameTextButton {
 				background: #eee;
 				cursor: pointer;
+				display: inline-block;
+				padding: 0.5rem 1rem;
+			}
+			
+			.label {
+				display: block;
+				text-align: center;
+				color: #555;
+				font-size: 0.8rem;
+				padding: 1rem 0 0.2rem 0;
+			}
+
+			@keyframes gradient {
+				0% {
+					background-position: 0% 50%;
+				}
+				50% {
+					background-position: 100% 50%;
+				}
+				100% {
+					background-position: 0% 50%;
+				}
 			}
 		</style>
 	</head>
 	<body>
 		<div class="app" x-data="nonogram">
-			<span
-				>Anzahl Leben:
-				<template x-for="i in 3">
-					<span x-text="i <= lives ? '❤️' : '🤍'"></span>
-				</template>
-			</span>
+			<h1 class="title">Omagramm</h1>
+			<header>
+				<div class="levels">
+					<span class="label">Level</span>
+					<span
+						class="level"
+						:class="n == 4 ? 'selectedLevel' : ''"
+						@click="n = 4"
+						>Leicht</span
+					>
+					<span
+						class="level"
+						:class="n == 6 ? 'selectedLevel' : ''"
+						@click="n = 6"
+						>Mittel</span
+					>
+					<span
+						class="level"
+						:class="n == 8 ? 'selectedLevel' : ''"
+						@click="n = 8"
+						>Schwer</span
+					>
+				</div>
+
+				<div class="lives">
+					<span class="label">Leben</span>
+					<span class="livesNumber" x-text="lives"></span>
+				</div>
+
+				<div class="newGame">
+					<span class="label">Neues Spiel</span>
+					<span class="newGameButton" @click="newGame()">🚀</span>
+				</div>
+			</header>
 
 			<div class="board_container">
 				<div class="colHintsContainer">
@@ -188,36 +343,56 @@
 			</div>
 
 			<div class="tools">
-				<span
-					class="tool"
-					:class="tool == 'black' ? 'selectedTool' : ''"
-					@click="tool = 'black'"
-					>⬛︎</span
-				>
-				<span
-					class="tool"
-					:class="tool == 'white' ? 'selectedTool' : ''"
-					@click="tool = 'white'"
-					>◻️</span
-				>
+				<div class="toolContainer">
+					<span class="label">
+						Auswählen
+					</span>
+					<span
+						class="tool cellIsBlack"
+						:class="tool == 'black' ? 'selectedTool' : ''"
+						@click="tool = 'black'"
+					>
+					</span>
+				</div>
+				<div class="toolContainer">
+					<span class="label">
+						Ausschließen
+					</span>
+					<span
+						class="tool cellIsWhite"
+						:class="tool == 'white' ? 'selectedTool' : ''"
+						@click="tool = 'white'"
+					>
+					</span>
+				</div>
 			</div>
 
 			<template x-if="lives == 0">
-				<div>
-					Leider verloren. Probiere es nochmal mit einem neuen Spiel!
+				<div class="dialogBackground dialogBackgroundLose">
+					<div class="dialog">
+						Du hast leider verloren. Versuche es noch einmal!
+						<br />
+						<br />
+	
+						<div class="newGameTextButton" @click="newGame()">
+							Neues Spiel 🚀
+						</div>
+					</div>
 				</div>
 			</template>
 
 			<template x-if="solved">
-				<div>Yay, gewonnen!!!</div>
+				<div class="dialogBackground dialogBackgroundWin">
+					<div class="dialog">
+						Juchu, du hast gewonnen!
+						<br />
+						<br />
+						<div class="newGameTextButton" @click="newGame()">
+							Neues Spiel 🚀
+						</div>
+					</div>
+				</div>
 			</template>
-
-			<div class="setLevel">
-				<span class="level" @click="n = 5">Leicht</span>
-				<span class="level" @click="n = 10">Mittel</span>
-				<span class="level" @click="n = 15">Schwer</span>
-			</div>
-		</div>
 
 		<script>
 			function generateBoard(n, probability) {
@@ -240,13 +415,16 @@
 					}
 					board.push(row);
 				}
+
+				// TODO: Maybe check whether this board is uniquely solvable.
+
 				return board;
 			}
 
 			function data() {
 				return {
-					n: 5,
-					prob: 0.5,
+					n: 4,
+					prob: 0.6,
 					board: [],
 					get hints() {
 						// Column Hints
@@ -311,8 +489,6 @@
 							rowHints.push(rHints);
 						}
 
-						console.log(rowHints);
-
 						return {
 							rows: rowHints,
 							cols: colHints,
@@ -341,7 +517,7 @@
 						this.board = generateBoard(this.n, this.prob);
 
 						this.$watch('n', (value) => {
-							this.board = generateBoard(this.n, this.prob);
+							this.newGame();
 						});
 					},
 
@@ -358,8 +534,23 @@
 
 						if (cell.solution != this.tool) {
 							this.lives -= 1;
-							// TODO: Mehr Feedback geben
+							// TODO: Give better feedback!
 							console.log('Leider falsch!');
+						}
+
+						// TODO: Check the row and column of the selected cell for correctness, then mark them directly and maybe indicate the row and col hints accordingly.
+
+						if (this.solved) {
+							// Complete the grid
+							for (let row = 0; row < this.board.length; row++) {
+								for (
+									let col = 0;
+									col < this.board.length;
+									col++
+								) {
+									this.board[row][col].selected = true;
+								}
+							}
 						}
 					},
 					whatIsSelected(cell) {
@@ -373,6 +564,10 @@
 							// Cell is not clicked
 							return '';
 						}
+					},
+					newGame() {
+						this.lives = 3;
+						this.board = generateBoard(this.n, this.prob);
 					},
 				};
 			}
