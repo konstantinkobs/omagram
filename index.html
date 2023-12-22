@@ -538,7 +538,34 @@
 							console.log('Leider falsch!');
 						}
 
-						// TODO: Check the row and column of the selected cell for correctness, then mark them directly and maybe indicate the row and col hints accordingly.
+						// Checks the cols and rows of the selected cell and completes them if they are complete
+						let colCorrect = true;
+						for (let idx = 0; idx < this.n; idx++) {
+							const c = this.board[cidx][idx];
+							if (c.solution == "black" && !c.selected) {
+								colCorrect = false;
+								break;
+							}
+						}
+						if (colCorrect) {
+							for (let idx = 0; idx < this.n; idx++) {
+								this.board[cidx][idx].selected = true;
+							}
+						}
+						let rowCorrect = true;
+						for (let idx = 0; idx < this.n; idx++) {
+							const c = this.board[idx][ridx];
+							if (c.solution == "black" && !c.selected) {
+								rowCorrect = false;
+								break;
+							}
+						}
+						if (rowCorrect) {
+							for (let idx = 0; idx < this.n; idx++) {
+								this.board[idx][ridx].selected = true;
+							}
+						}
+
 
 						if (this.solved) {
 							// Complete the grid
