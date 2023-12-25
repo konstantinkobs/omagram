@@ -4,9 +4,15 @@
 			defer
 			src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
 		></script>
-		<script src="js/confetti.js"></script>
 
 		<title>Omagramm</title>
+
+		<!-- Webapp Config -->
+		<meta name="viewport" content="width=device-width, user-scalable=no">
+		<link rel="apple-touch-icon" href="./images/icon.png">
+		<meta name="apple-mobile-web-app-title" content="Omagramm">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
 
 		<!-- Fonts -->
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -29,12 +35,18 @@
 			html {
 				background-image: url(images/background.png);
 				background-repeat: repeat;
+
+				padding-bottom: 2rem;
 			}
 
 			.app {
 				margin: 0 auto;
 				width: 100%;
-				max-width: 500px;
+				max-width: 700px;
+			}
+
+			.titleImage {
+				height: 4rem;
 			}
 
 			.title {
@@ -201,7 +213,19 @@
 			.livesNumber {
 				display: block;
 				font-size: 3rem;
+			}
+
+			.livesNumber[data-lives="3"] {
+				color: green;
+			}
+
+			.livesNumber[data-lives="2"] {
+				color: orange;
+			}
+
+			.livesNumber[data-lives="1"] {
 				color: var(--red);
+				animation: pulsing 2s ease-in-out infinite;
 			}
 
 			.newGameButton {
@@ -213,6 +237,7 @@
 
 			.dialog {
 				text-align: center;
+				text-wrap: balance;
 
 				background: white;
 				padding: 1rem 2rem;
@@ -267,11 +292,44 @@
 					background-position: 0% 50%;
 				}
 			}
+
+			@keyframes pulsing {
+				0% {
+					transform: scale(100%);
+				}
+				50% {
+					transform: scale(150%);
+				}
+				100% {
+					transform: scale(100%);
+				}
+			}
+
+			@media screen and (orientation:landscape) {
+				.title {
+					position: fixed;
+					top: 0;
+					left: 0;
+					font-size: 2rem;
+
+					padding: 0.5rem 1rem;
+				}
+
+				.titleImage {
+					height: 2rem;
+				}
+
+				.app {
+					max-width: 500px;
+				}
+			}
 		</style>
 	</head>
 	<body>
 		<div class="app" x-data="nonogram">
-			<h1 class="title">Omagramm</h1>
+			<h1 class="title">
+				<img class="titleImage" src="images/black.png" alt="Omagramm">
+				Omagramm</h1>
 			<header>
 				<div class="levels">
 					<span class="label">Level</span>
@@ -297,7 +355,7 @@
 
 				<div class="lives">
 					<span class="label">Leben</span>
-					<span class="livesNumber" x-text="lives"></span>
+					<span class="livesNumber" :data-lives="lives" x-text="lives"></span>
 				</div>
 
 				<div class="newGame">
@@ -345,7 +403,7 @@
 			<div class="tools">
 				<div class="toolContainer">
 					<span class="label">
-						Auswählen
+						Markieren
 					</span>
 					<span
 						class="tool cellIsBlack"
@@ -366,6 +424,30 @@
 					</span>
 				</div>
 			</div>
+
+			<footer>
+				<details>
+					<summary>Spielanleitung</summary>
+					<h1>Anleitung</h1>
+					<p>
+						Das Omagramm ist eigentlich ein Nonogramm.
+						Es handelt sich hierbei um ein japanisches Rätsel, bei dem du manche Kästchen des Gitters markieren musst.
+						Links und oberhalb des Gitters findest du Zahlen, die angeben, wie viele <b>aufeinanderfolgende</b> Kästchen markiert werden müssen.
+					</p>
+					<p>
+						<b>Beispiel:</b> Steht eine "3" links von der ersten Zeile, müssen drei aufeinanderfolgende Kästchen in dieser Zeile markiert werden.
+						Da das Spielfeld aber mehr als drei Kästchen in einer Zeile hat, musst du dir mithilfe der anderen Zahlen und dem, was du bisher markiert hast, herleiten, welche drei Kästchen markiert werden müssen.
+					</p>
+					<p>
+						Stehen mehrere Zahlen als Hinweise bei einer Spalte oder Zeile, handelt es sich um mehrere zusammenhängende Kästchenketten von oben nach unten bzw. links nach rechts (in der Reihenfolge).
+						Beachte, dass diese Ketten mindestens durch ein freies bzw. ausgeschlossenes Kästchen getrennt sein müssen.
+					</p>
+					<p>
+						<b>Beispiel:</b> Stehen in einer Spalte eine "1" und dann eine "2" untereinander, muss diese Spalte von oben durch die Spalte gehend zuerst ein markiertes Kästchen, dann mindestens ein ausgeschlossenes und dann zwei aufeinanderfolgende markierte Kästchen beinhalten.
+					</p>
+					<p>Viel Spaß beim Spielen!</p>
+				</details>
+			</footer>
 
 			<template x-if="lives == 0">
 				<div class="dialogBackground dialogBackgroundLose">
@@ -389,6 +471,22 @@
 						<br />
 						<div class="newGameTextButton" @click="newGame()">
 							Neues Spiel 🚀
+						</div>
+					</div>
+				</div>
+			</template>
+
+			<template x-if="wrongMove">
+				<div class="dialogBackground">
+					<div class="dialog">
+						Das war leider nicht richtig.
+						Du hast ein Kästchen <span x-text="tool == 'black' ? 'markiert' : 'ausgeschlossen'"></span>, obwohl es <span x-text="tool == 'black' ? 'ausgeschlossen' : 'markiert'"></span> hätte werden müssen. 🙁
+						<br />
+						Das Kästchen wurde korrigiert, aber du verlierst ein Leben.
+						<br />
+						<br />
+						<div class="newGameTextButton" @click="wrongMove=false">
+							Okay, weiter geht's 💪
 						</div>
 					</div>
 				</div>
@@ -426,6 +524,7 @@
 					n: 4,
 					prob: 0.6,
 					board: [],
+					wrongMove: false,
 					get hints() {
 						// Column Hints
 						const colHints = [];
@@ -534,8 +633,9 @@
 
 						if (cell.solution != this.tool) {
 							this.lives -= 1;
-							// TODO: Give better feedback!
-							console.log('Leider falsch!');
+							if(this.lives > 0) {
+								this.wrongMove = true;
+							}
 						}
 
 						// Checks the cols and rows of the selected cell and completes them if they are complete
